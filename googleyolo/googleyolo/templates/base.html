@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Googleyolo - Django test</title>
+  <script src="https://smartlock.google.com/client"></script>
+  <script>
+    const yolodefaults = {
+      supportedAuthMethods: [
+        "https://accounts.google.com",
+        "googleyolo://id-and-password"
+      ],
+      supportedIdTokenProviders: [
+        {
+          uri: "https://accounts.google.com",
+          clientId: "{{ GOOGLE_CLIENT_ID }}"
+        }
+      ]
+    }
+
+    function authenticate(token) {
+      var request = new XMLHttpRequest();
+
+      request.open("POST", "{% url 'auth' %}", true);
+      request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      request.onload = function () {
+        var status = request.status; // HTTP response status, e.g., 200 for "200 OK"
+        var data = request.responseText; // Returned data, e.g., an HTML document.
+        if (status === 200) {
+          console.log("Successfully authenticated.");
+        } else {
+          console.log("Authentication failed: ", data);
+        }
+        // redirect to protected page
+        window.location.href = "{% url 'protected' %}";
+      }
+
+      request.send("token=" + token);
+    }
+
+    function signIn() {
+      hintPromise = googleyolo.hint(yolodefaults);
+      hintPromise.then((credential) => {
+        if (credential.idToken) {
+          // Send the token to your auth backend.
+          authenticate(credential.idToken)
+        }
+      }, (error) => {
+        console.log("Error: ", error.type);
+        switch (error.type) {
+          case "userCanceled":
+            // The user closed the hint selector. Depending on the desired UX,
+            // request manual sign up or do nothing.
+            break;
+          case "noCredentialsAvailable":
+            // No hint available for the session. Depending on the desired UX,
+            // request manual sign up or do nothing.
+            alert("No signed in Google accounts available - visit accounts.google.com to ensure that at least one account is signed in.")
+            break;
+          case "requestFailed":
+            // The request failed, most likely because of a timeout.
+            // You can retry another time if necessary.
+            break;
+          case "operationCanceled":
+            // The operation was programmatically canceled, do nothing.
+            break;
+          case "illegalConcurrentRequest":
+            // Another operation is pending, this one was aborted.
+            break;
+          case "initializationError":
+            // Failed to initialize. Refer to error.message for debugging.
+            break;
+          case "configurationError":
+            // Configuration error. Refer to error.message for debugging.
+            break;
+          default:
+            // Unknown error, do nothing.
+        }
+        }
+      );
+    }
+
+    window.onGoogleYoloLoad = (googleyolo) => {
+      console.log("GoogleYolo library loaded.");
+    };
+  </script>
+  {% block extra_js %}
+  {% endblock %}
+</head>
+
+<body>
+  {% if request.user.is_authenticated %}
+  <a href="{% url 'logout' %}">Sign out</a>
+  {% endif %}
+
+  {% block body %}
+  {% endblock %}
+</body>
+</html>

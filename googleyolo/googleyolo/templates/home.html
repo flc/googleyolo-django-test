@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block body %}
+<ul>
+  <li>
+    <a href="#" onclick="signIn()">Sign-in with your Google account</a>
+  </li>
+  <li>
+    <a href="{% url 'protected' %}">Protected page</a>
+  </li>
+</ul>
+{% endblock %}
